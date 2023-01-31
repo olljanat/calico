@@ -77,14 +77,15 @@ var _ = Describe("Static", func() {
 	}
 
 	for _, trueOrFalse := range []bool{true, false} {
-		kubeIPVSEnabled := trueOrFalse
-		var dropAction Action
-		dropAction = DropAction{}
-		dropActionString := "DROP"
-		if kubeIPVSEnabled {
-			dropAction = RejectAction{}
-			dropActionString = "REJECT"
+		var denyAction Action
+		denyAction = DropAction{}
+		denyActionString := "DROP"
+		if trueOrFalse {
+			denyAction = RejectAction{}
+			denyActionString = "REJECT"
 		}
+
+		kubeIPVSEnabled := trueOrFalse
 		Describe(fmt.Sprintf("with default config and IPVS=%v", kubeIPVSEnabled), func() {
 			BeforeEach(func() {
 				conf = Config{
@@ -107,7 +108,7 @@ var _ = Describe("Static", func() {
 					IptablesMarkNonCaliEndpoint: 0x100,
 					KubeIPVSSupportEnabled:      kubeIPVSEnabled,
 					KubeNodePortRanges:          []numorstring.Port{{MinPort: 30030, MaxPort: 30040, PortName: ""}},
-					IptablesFilterDenyAction:    dropActionString,
+					IptablesFilterDenyAction:    denyActionString,
 				}
 			})
 
@@ -128,7 +129,7 @@ var _ = Describe("Static", func() {
 							{Match: Match().Protocol("udp").SourceNet("0.0.0.0").SourcePorts(68).DestPorts(67),
 								Action: AcceptAction{}},
 							{Match: Match().MarkSingleBitSet(0x40).RPFCheckFailed(false),
-								Action: dropAction},
+								Action: denyAction},
 							{Match: Match().MarkClear(0x40),
 								Action: JumpAction{Target: ChainDispatchFromHostEndpoint}},
 							{Match: Match().MarkSingleBitSet(0x10),
@@ -147,7 +148,7 @@ var _ = Describe("Static", func() {
 							{Match: Match().MarkMatchesWithMask(0x40, 0x40),
 								Action: JumpAction{Target: ChainRpfSkip}},
 							{Match: Match().MarkSingleBitSet(0x40).RPFCheckFailed(false),
-								Action: dropAction},
+								Action: denyAction},
 							{Match: Match().MarkClear(0x40),
 								Action: JumpAction{Target: ChainDispatchFromHostEndpoint}},
 							{Match: Match().MarkSingleBitSet(0x10),
@@ -501,7 +502,7 @@ var _ = Describe("Static", func() {
 						{Match: Match().MarkMatchesWithMask(0x40, 0x40),
 							Action: JumpAction{Target: ChainRpfSkip}},
 						{Match: Match().MarkSingleBitSet(0x40).RPFCheckFailed(false),
-							Action: dropAction},
+							Action: denyAction},
 						{Match: Match().MarkClear(0x40),
 							Action: JumpAction{Target: ChainDispatchFromHostEndpoint}},
 						{Match: Match().MarkSingleBitSet(0x10),
@@ -519,7 +520,7 @@ var _ = Describe("Static", func() {
 						{Match: Match().MarkMatchesWithMask(0x40, 0x40),
 							Action: JumpAction{Target: ChainRpfSkip}},
 						{Match: Match().MarkSingleBitSet(0x40).RPFCheckFailed(false),
-							Action: dropAction},
+							Action: denyAction},
 						{Match: Match().MarkClear(0x40),
 							Action: JumpAction{Target: ChainDispatchFromHostEndpoint}},
 						{Match: Match().MarkSingleBitSet(0x10),
@@ -634,7 +635,7 @@ var _ = Describe("Static", func() {
 					IptablesMarkEndpoint:        epMark,
 					IptablesMarkNonCaliEndpoint: 0x100,
 					KubeIPVSSupportEnabled:      kubeIPVSEnabled,
-					IptablesFilterDenyAction:    dropActionString,
+					IptablesFilterDenyAction:    denyActionString,
 				}
 			})
 
